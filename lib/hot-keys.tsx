@@ -34,7 +34,7 @@ export interface HotKeysProps {
   /** A map from action names to Mousetrap key sequences */
   keyMap?: HotKeyMap;
   /** A map from action names to event handler functions */
-  handlers: Record<string, (event?: KeyboardEvent, sequence?: string) => void>;
+  handlers?: Record<string, (event?: KeyboardEvent, sequence?: string) => void>;
   /** Whether HotKeys should behave as if it has focus in the browser,
       whether it does or not - a way to force focus behaviour */
   focused?: boolean;
