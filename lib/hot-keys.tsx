@@ -1,122 +1,69 @@
-import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import isBool from 'lodash/isBoolean';
+import isEqual from 'lodash/isEqual';
+import isObject from 'lodash/isObject';
+import Mousetrap from 'mousetrap';
+import React from 'react';
 import ReactDOM from 'react-dom';
-import FocusTrap from './FocusTrap';
 
-import isBool from 'lodash.isboolean';
-import isObject from 'lodash.isobject';
-import isEqual from 'lodash.isequal';
-import sequencesFromKeyMap from './utils/sequencesFromKeyMap';
-import hasChanged from './utils/hasChanged';
+import FocusTrap from './focus-trap';
+import hasChanged from './utils/has-changed';
+import sequencesFromKeyMap from './utils/sequences-from-key-map';
 
-/**
- * A string or list of strings, that represent a sequence of one or more keys
- * @typedef {String | Array.<String>} MouseTrapKeySequence
- * @see {@link https://craig.is/killing/mice} for support key sequences
- */
+import type { HotKey, HotKeyMap, SequenceHandler } from './types';
 
-/**
- * Name of a key event
- * @typedef {'keyup'|'keydown'|'keypress'} KeyEventName
- */
+interface Context {
+  /**
+   * Reference to the most direct ancestor that is a HotKeys component (if one
+   * exists) so that messages may be passed to it when necessary
+   */
+  hotKeyParent: HotKeys | null;
 
-/**
- * Options for the mapping of a key sequence and event
- * @typedef {Object} KeyEventOptions
- * @property {MouseTrapKeySequence} The key sequence required to satisfy a KeyEventMatcher
- * @property {KeyEventName} action The keyboard state required to satisfy a KeyEventMatcher
- */
+  /**
+   * Reference to the KeyMap of its most direct HotKeys ancestor, so that it may
+   * be merged into this components
+   */
+  hotKeyMap: HotKeyMap | null;
+}
 
-/**
- * A matcher used on keyboard sequences and events to trigger handler functions
- * when matching sequences occur
- * @typedef {MouseTrapKeySequence | KeyMapOptions | Array<MouseTrapKeySequence>} KeyEventMatcher
- */
+const HotKeysContext = React.createContext<Context>({
+  hotKeyParent: null,
+  hotKeyMap: null,
+});
 
-/**
- * A unique key to associate with KeyEventMatchers that allows associating handler
- * functions at a later stage
- * @typedef {String} ActionName
- */
-
-/**
- * A mapping from ActionNames to KeyEventMatchers
- * @typedef {Object.<String, KeyEventMatcher>} KeySequence
- */
+interface HotKeysProps {
+  /** A map from action names to Mousetrap key sequences */
+  keyMap?: HotKeyMap;
+  /** A map from action names to event handler functions */
+  handlers: Record<string, (event?: KeyboardEvent, sequence?: string) => void>;
+  /** Whether HotKeys should behave as if it has focus in the browser,
+      whether it does or not - a way to force focus behaviour */
+  focused?: boolean;
+  /** The DOM element the keyboard listeners should be attached to */
+  attach?: Element | Window;
+  /** Children to wrap within a focus trap */
+  children: React.ReactNode;
+  /** Function to call when this component gains focus in the browser */
+  onFocus?: React.FocusEventHandler<Element>;
+  /** Function to call when this component loses focus in the browser */
+  onBlur?: React.FocusEventHandler<Element>;
+  component?: keyof JSX.IntrinsicElements | React.ComponentType;
+}
 
 /**
  * Component that wraps it children in a "focus trap" and allows key events to
  * trigger function handlers when its children are in focus
  */
-class HotKeys extends Component {
+class HotKeys extends React.Component<HotKeysProps> {
 
-  static propTypes = {
-    /**
-     * A map from action names to Mousetrap key sequences
-     */
-    keyMap: PropTypes.object,
+  __isFocused__ = false;
+  __hotKeyMap__: HotKeyMap | null = null;
+  __mousetrap__: ReturnType<typeof Mousetrap> | null = null;
+  __lastChildSequence__: HotKey | null = null;
 
-    /**
-     * A map from action names to event handler functions
-     */
-    handlers: PropTypes.object,
+  static contextType = HotKeysContext;
+  declare context: React.ContextType<typeof HotKeysContext>;
 
-    /**
-     * Whether HotKeys should behave as if it has focus in the browser,
-     * whether it does or not - a way to force focus behaviour
-     */
-    focused: PropTypes.bool,
-
-    /**
-     * The DOM element the keyboard listeners should be attached to
-     */
-    attach: PropTypes.any,
-
-    /**
-     * Children to wrap within a focus trap
-     */
-    children: PropTypes.node,
-
-    /**
-     * Function to call when this component gains focus in the browser
-     */
-    onFocus: PropTypes.func,
-
-    /**
-     * Function to call when this component loses focus in the browser
-     */
-    onBlur: PropTypes.func,
-  };
-
-  static childContextTypes = {
-    /**
-     * Reference to this instance of HotKeys so that any descendents are aware
-     * that they are being rendered within another HotKeys component
-     */
-    hotKeyParent: PropTypes.any,
-
-    /**
-     * Reference to this instance's KeyMap so that any descendents may merge it
-     * into its own
-     */
-    hotKeyMap: PropTypes.object
-  };
-
-  static contextTypes = {
-    /**
-     * Reference to the most direct ancestor that is a HotKeys component (if one
-     * exists) so that messages may be passed to it when necessary
-     */
-    hotKeyParent: PropTypes.any,
-
-    /**
-     * Reference to the KeyMap of its most direct HotKeys ancestor, so that it may
-     * be merged into this components
-     */
-    hotKeyMap: PropTypes.object
-  };
-
-  constructor(props, context) {
+  constructor(props: HotKeysProps, context: typeof HotKeysContext) {
     super(props, context);
 
     /**
@@ -132,12 +79,11 @@ class HotKeys extends Component {
    * Constructs the context object that contains references to this component
    * and its KeyMap so that they may be accessed by any descendant HotKeys
    * components
-   * @returns {{hotKeyParent: HotKeys, hotKeyMap: KeySequence}} Child context object
    */
-  getChildContext() {
+  getContext(): Context {
     return {
       hotKeyParent: this,
-      hotKeyMap: this.__hotKeyMap__
+      hotKeyMap: this.__hotKeyMap__,
     };
   }
 
@@ -171,9 +117,8 @@ class HotKeys extends Component {
    * This component's KeyMap merged with that of its most direct ancestor that is a
    * HotKeys component. This component's mappings take precedence over those defined
    * in its ancestor.
-   * @returns {KeySequence} This component's KeyMap merged with its HotKeys ancestor's
    */
-  buildMap() {
+  buildMap(): HotKeyMap {
     const parentMap = this.context.hotKeyMap || {};
     const thisMap = this.props.keyMap || {};
 
@@ -181,31 +126,26 @@ class HotKeys extends Component {
      * TODO: This appears to only merge in the key maps of its most direct
      * ancestor - what about grandparent components' KeyMap's?
      */
-    return {...parentMap, ...thisMap};
+    return { ...parentMap, ...thisMap };
   }
 
   /**
    * This component's KeyMap
-   * @returns {KeySequence} This component's KeyMap
    */
-  getMap() {
-    return this.__hotKeyMap__;
+  getMap(): HotKeyMap | null {
+    return this.__hotKeyMap__ || {};
   }
 
   /**
    * Imports mousetrap and stores a reference to it on the this component
    */
   componentDidMount() {
-    // import is here to support React's server rendering as Mousetrap immediately
-    // calls itself with window and it fails in Node environment
-    const Mousetrap = require('mousetrap');
-
     /**
      * TODO: Not optimal - imagine hundreds of this component. We need a top level
      * delegation point for mousetrap
      */
     this.__mousetrap__ = new Mousetrap(
-      this.props.attach || ReactDOM.findDOMNode(this)
+      (this.props.attach || ReactDOM.findDOMNode(this)) as Element,
     );
 
     this.updateHotKeys(true);
@@ -214,9 +154,8 @@ class HotKeys extends Component {
   /**
    * Updates this component's KeyMap and synchronises the handlers across to
    * Mousetrap after the component has been updated (passed new prop values)
-   * @param {Object} prevProps The props used on the component's last render
    */
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps: HotKeysProps) {
     this.updateHotKeys(false, prevProps);
   }
 
@@ -233,14 +172,10 @@ class HotKeys extends Component {
   /**
    * Updates this component's KeyMap and synchronises the changes across
    * to Mouestrap
-   * @param {Boolean} force Whether to force an update of the KeyMap and sync
-   *        to Mousetrap, even if no relevant values appear to have changed
-   *        since the last time
-   * @param {Object} prevProps The props used on the component's last render
    */
-  updateHotKeys(force = false, prevProps = {}) {
-    const {handlers = {}} = this.props;
-    const {handlers: prevHandlers = handlers} = prevProps;
+  updateHotKeys(force: boolean = false, prevProps: Partial<HotKeysProps> = {}) {
+    const { handlers = {} } = this.props;
+    const { handlers: prevHandlers = handlers } = prevProps;
 
     const keyMapHasChanged = this.updateMap();
 
@@ -260,7 +195,7 @@ class HotKeys extends Component {
     const { handlers = {} } = this.props;
 
     const hotKeyMap = this.getMap();
-    const sequenceHandlers = [];
+    const sequenceHandlers: SequenceHandler[] = [];
     const mousetrap = this.__mousetrap__;
 
     // Group all our handlers by sequence
@@ -276,7 +211,7 @@ class HotKeys extends Component {
       sequencesAsArray.forEach((sequence) => {
         let action;
 
-        const callback = (event, sequence) => {
+        const callback = (event?: KeyboardEvent, sequence?: string) => {
           /**
            * Check we are actually in focus and that a child hasn't already
            * handled this sequence
@@ -297,17 +232,19 @@ class HotKeys extends Component {
           sequence = sequence.sequence;
         }
 
-        sequenceHandlers.push({callback, action, sequence});
+        sequenceHandlers.push({ callback, action, sequence });
       });
     });
 
     /**
      * TODO: Hard reset our handlers (probably could be more efficient)
      */
-    mousetrap.reset();
+    if (mousetrap) {
+      mousetrap!.reset();
 
-    sequenceHandlers.forEach(({ sequence, callback, action }) =>
-      mousetrap.bind(sequence, callback, action));
+      sequenceHandlers.forEach(({ sequence, callback, action }) =>
+        mousetrap!.bind(sequence, callback, action));
+    }
   }
 
   /**
@@ -318,11 +255,8 @@ class HotKeys extends Component {
    * This reference is stored so that parent HotKeys components do not try
    * to handle a sequence that has already been handled by one of its
    * descendants.
-   *
-   * @param {KeyEventMatcher} sequence The sequence handled most recently by
-   * a child HotKeys component
    */
-  childHandledSequence(sequence = null) {
+  childHandledSequence(sequence: HotKey | null = null) {
     this.__lastChildSequence__ = sequence;
 
     /**
@@ -346,6 +280,7 @@ class HotKeys extends Component {
        * Props used by HotKeys that should not be passed down to its focus trap
        * component
        */
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       keyMap, handlers, focused, attach,
 
       children,
@@ -353,8 +288,10 @@ class HotKeys extends Component {
     } = this.props;
 
     return (
-      <FocusTrap { ...props } onFocus={ this.onFocus } onBlur={ this.onBlur }>
-        { children }
+      <FocusTrap {...props} onFocus={this.onFocus} onBlur={this.onBlur}>
+        <HotKeysContext.Provider value={this.getContext()}>
+          {children}
+        </HotKeysContext.Provider>
       </FocusTrap>
     );
   }
@@ -363,11 +300,11 @@ class HotKeys extends Component {
    * Updates the internal focused state and calls the onFocus prop if it is
    * defined
    */
-  onFocus() {
+  onFocus(...args: Parameters<React.FocusEventHandler<Element>>) {
     this.__isFocused__ = true;
 
     if (this.props.onFocus) {
-      this.props.onFocus(...arguments);
+      this.props.onFocus(...args);
     }
   }
 
@@ -378,17 +315,18 @@ class HotKeys extends Component {
    * Also registers a null sequence as being handled by this component with
    * its ancestor HotKeys.
    */
-  onBlur() {
+  onBlur(...args: Parameters<React.FocusEventHandler<Element>>) {
     this.__isFocused__ = false;
 
     if (this.props.onBlur) {
-      this.props.onBlur(...arguments);
+      this.props.onBlur(...args);
     }
 
     if (this.context.hotKeyParent) {
       this.context.hotKeyParent.childHandledSequence(null);
     }
   }
+
 }
 
 

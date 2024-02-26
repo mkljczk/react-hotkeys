@@ -1,4 +1,8 @@
-function sequencesFromKeyMap(hotKeyMap, hotKeyName) {
+import type { HotKey, HotKeyMap } from '../types';
+
+const sequencesFromKeyMap = (hotKeyMap: HotKeyMap | null, hotKeyName: string): HotKey[] => {
+  if (!hotKeyMap) return [];
+
   const sequences = hotKeyMap[hotKeyName];
 
   if (!sequences) {
@@ -14,6 +18,6 @@ function sequencesFromKeyMap(hotKeyMap, hotKeyName) {
     return [sequences];
   }
 
-}
+};
 
 export default sequencesFromKeyMap;

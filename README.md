@@ -3,10 +3,9 @@
   <h2 align="center">React HotKeys</h2>
 </p>
 
-[![npm](https://img.shields.io/npm/dm/react-hotkeys.svg)]()
-[![Build Status](https://travis-ci.org/greena13/react-hotkeys.svg)](https://travis-ci.org/greena13/react-hotkeys)
-[![GitHub license](https://img.shields.io/github/license/greena13/react-hotkeys.svg)](https://github.com/greena13/react-hotkeys/blob/master/LICENSE)
-[![Gitter](https://img.shields.io/gitter/room/chrisui/react-hotkeys.svg)](https://gitter.im/chrisui/react-hotkeys)
+[![npm](https://img.shields.io/npm/dm/@mkljczk/react-hotkeys.svg)]()
+<!-- [![Build Status](https://travis-ci.org/greena13/react-hotkeys.svg)](https://travis-ci.org/greena13/react-hotkeys) -->
+[![GitHub license](https://img.shields.io/github/license/mkljczk/react-hotkeys.svg)](https://github.com/mkljczk/react-hotkeys/blob/master/LICENSE)
 
 A declarative library for handling hotkeys and focus areas in React applications.
 
@@ -16,20 +15,19 @@ A declarative library for handling hotkeys and focus areas in React applications
 - Named hotkeys for easy customization
 - Intuitive key commands thanks to [Mousetrap](https://github.com/ccampbell/mousetrap)
 - Tree based priority - the deepest focused handler wins
-- Easy-to-use [HOC](https://github.com/greena13/react-hotkeys/blob/master/lib/withHotKeys.js) available.
 
 ## Usage
 
 #### Key map
 
 ```javascript
-import {HotKeys} from 'react-hotkeys';
+import { HotKeys } from '@mkljczk/react-hotkeys';
 
 // Simple "name:key sequence/s" to create a hotkey map
 
 const map = {
   'snapLeft': 'command+left',
-  'deleteNode': ['del', 'backspace']
+  'deleteNode': ['del', 'backspace'],
 };
 
 // Component with a key map
@@ -51,7 +49,7 @@ const App = React.createClass({
 #### Handlers
 
 ```javascript
-import {HotKeys} from 'react-hotkeys';
+import { HotKeys } from '@mkljczk/react-hotkeys';
 
 /**
  * Component with hotkey handlers, which are only called when the component
@@ -62,7 +60,7 @@ import {HotKeys} from 'react-hotkeys';
 const MyNode = React.createClass({
   render() {
     const handlers = {
-      'deleteNode': this.deleteNode
+      'deleteNode': this.deleteNode,
     };
 
     return (
@@ -76,11 +74,9 @@ const MyNode = React.createClass({
 
 ## Install
 
-### CommonJS & ES6 Modules
+### ES6 Modules
 
-`react-hotkeys` is available as a CommonJS or a ES6 Modules through npm or yarn. It uses `NODE_ENV` to determine whether to export the development or production build in your library or application.
-
-It is expected you will use a bundling tool like Webpack or Uglify to remove the version of the bundle you are not using with each version of your application's code, to keep the library size to a minimum.
+`@mkljczk/react-hotkeys` is available as a ES6 Modules through npm or yarn. It uses `NODE_ENV` to determine whether to export the development or production build in your library or application.
 
 #### npm
 
@@ -94,9 +90,9 @@ npm install react-hotkeys --save
 yarn add react-hotkeys
 ```
 
-### UMD
+<!-- ### UMD
 
-`react-hotkeys` as a UMD module is available on your CDN of choice.
+`@mkljczk/react-hotkeys` as a UMD module is available on your CDN of choice.
 
 Change `1.0.1` for the version that you would like to use.
 
@@ -128,7 +124,7 @@ Bower support was removed in `v1.0.0`, but those who already rely on earlier ver
 bower install react-hotkeys@0.10.0
 ```
 
-The Bower version of the package will **not** be supported going forward (including fixing any outstanding issues).
+The Bower version of the package will **not** be supported going forward (including fixing any outstanding issues). -->
 ## Defining Hot Keys
 
 `react-hotkeys` uses key maps to separate defining keyboard shortcuts from the actions that they trigger. This allows adding or changing hot keys in the future, without having to also update the actions in many places across your application.
@@ -138,7 +134,7 @@ Hotkey maps are simple JavaScript objects, where the keys are the names of the a
 ```javascript
 const keyMap = {
   'deleteNode': 'del',
-  'moveUp': 'up'
+  'moveUp': 'up',
 };
 ```
 
@@ -149,7 +145,7 @@ You can specify multiple keys that will trigger the same action using arrays:
 ```javascript
 const keyMap = {
   'deleteNode': ['del', 'backspace'],
-  'moveUp': ['up', 'w']
+  'moveUp': ['up', 'w'],
 };
 ```
 
@@ -201,14 +197,14 @@ Key maps trigger named actions when matching keys are pressed - but do not defin
 Handlers may be defined in the same `<HotKeys />` component as the key map:
 
 ```javascript
-import {HotKeys} from 'react-hotkeys';
+import { HotKeys } from '@mkljczk/react-hotkeys';
 
 const keyMap = {
-    moveUp: 'up',
+  moveUp: 'up',
 }
 
 const handlers = {
-  'moveUp': (event) => console.log('Move up hotkey called!')
+  'moveUp': (event) => console.log('Move up hotkey called!'),
 };
 
 <HotKeys keyMap={keyMap} handlers={handlers}>
@@ -220,27 +216,27 @@ Or in any descendant of the `<HotKeys />` component that defines the key map:
 
 
  ```javascript
- import {HotKeys} from 'react-hotkeys';
+ import { HotKeys } from '@mkljczk/react-hotkeys';
 
- const keyMap = {
-     moveUp: 'up',
- }
+const keyMap = {
+  moveUp: 'up',
+}
 
- const handlers = {
-   'moveUp': (event) => console.log('Move up hotkey called!')
- };
+const handlers = {
+  'moveUp': (event) => console.log('Move up hotkey called!')
+};
 
- <HotKeys keyMap={keyMap}>
-   <div>
+<HotKeys keyMap={keyMap}>
+  <div>
     <HotKeys handlers={handlers}>
       <input />
     </HotKeys>
-   </div>
+  </div>
 
-   <div>
+  <div>
     <input />
-   </div>
- </HotKeys>
+  </div>
+</HotKeys>
  ```
 
 #### Hard Sequence Handlers
@@ -250,7 +246,7 @@ You can also explicitly define sequences as handlers in case you want a *hard*-o
 ```javascript
 // If no named hotkey 'up' exists we assume it is a key sequence
 const handlers = {
-  'up': (event) => console.log('up key called')
+  'up': (event) => console.log('up key called'),
 };
 ```
 
@@ -321,23 +317,19 @@ You can get a reference to an element using React's `ref` property:
 
 ```javascript
 class MyComponent extends Component {
-
-    componentDidUpdate(prevProps) {
-
-        if(!prevProps.isFocused && this.props.isFocused) {
-            this._container.focus();
-        }
-
+  componentDidUpdate(prevProps) {
+    if(!prevProps.isFocused && this.props.isFocused) {
+      this._container.focus();
     }
+  }
 
-    render() {
-        return (
-            <div ref={ (c) => this._container = c } >
-                My focusable content
-            </div>
-        )
-    }
-
+  render() {
+    return (
+      <div ref={(c) => this._container = c}>
+        My focusable content
+      </div>
+    )
+  }
 }
 ```
 
@@ -351,9 +343,9 @@ document.activeElement
 
 ## Troubleshooting & Gotchas
 
-### Not compatible with lodash-webpack-plugin
+<!-- ### Not compatible with lodash-webpack-plugin
 
-There is [some suggestion](https://github.com/greena13/react-hotkeys/issues/46) that `react-hotkeys` is not compatible with `lodash-webpack-plugin`. If you are experiencing issues where none of your handlers are being called and are using this webpack plugin, please try disabling it.
+There is [some suggestion](https://github.com/greena13/react-hotkeys/issues/46) that `react-hotkeys` is not compatible with `lodash-webpack-plugin`. If you are experiencing issues where none of your handlers are being called and are using this webpack plugin, please try disabling it. -->
 
 ### Blue border appears around children of HotKeys
 
@@ -363,36 +355,36 @@ This can be disabled using CSS similar to the following:
 
 ```css
 div[tabindex="-1"]:focus {
-    outline: 0;
+  outline: 0;
 }
 ```
 
 ## Support
 
-Please use [Gitter](https://gitter.im/Chrisui/react-hotkeys) to ask any questions you may have regarding how to use `react-hotkeys`.
+<!-- Please use [Gitter](https://gitter.im/Chrisui/react-hotkeys) to ask any questions you may have regarding how to use `react-hotkeys`. -->
 
-If you believe you have found a bug or have a feature request, please [open an issue](https://github.com/greena13/react-hotkeys/issues).
+If you believe you have found a bug or have a feature request, please [open an issue](https://github.com/mkljczk/react-hotkeys/issues).
 
-## Stability & Maintenance
+<!-- ## Stability & Maintenance
 
 `react-hotkeys` is considered stable and already being widely used (most notably Lystable and Whatsapp).
 
 It has a non-comprehensive test suite. [![Build Status](https://travis-ci.org/greena13/react-hotkeys.svg)](https://travis-ci.org/greena13/react-hotkeys)
 
-In November 2017, responsibility for maintaining `react-hotkeys` has changed hands. The new group of contributors will be working towards improving performance and providing *additional* functionality rather than having any breaking changes.
+In November 2017, responsibility for maintaining `react-hotkeys` has changed hands. The new group of contributors will be working towards improving performance and providing *additional* functionality rather than having any breaking changes. -->
 
 
 ## Contribute, please!
 
-If you're interested in helping out with the maintenance of `react-hotkeys`, make yourself known on [Gitter](https://gitter.im/Chrisui/react-hotkeys), [open an issue](https://github.com/greena13/react-hotkeys/issues) or create a pull request.
+If you're interested in helping out with the maintenance of `@mkljczk/react-hotkeys`, <!-- make yourself known on [Gitter](https://gitter.im/Chrisui/react-hotkeys), -->[open an issue](https://github.com/mkljczk/react-hotkeys/issues) or create a pull request.
 
 All contributions are welcome and greatly appreciated - from contributors of all levels of experience.
 
-Collaboration is loosely being coordinated across [Gitter](https://gitter.im/Chrisui/react-hotkeys) and [Projects](https://github.com/greena13/react-hotkeys/projects).
+<!-- Collaboration is loosely being coordinated across [Gitter](https://gitter.im/Chrisui/react-hotkeys) and [Projects](https://github.com/greena13/react-hotkeys/projects). -->
 
-### Roadmap
+<!-- ### Roadmap
 
-The product roadmap is being currently being tracked in [Projects](https://github.com/greena13/react-hotkeys/projects), but is largely focused on improving performance, code quality and adding extra features to meet common requirements.
+The product roadmap is being currently being tracked in [Projects](https://github.com/greena13/react-hotkeys/projects), but is largely focused on improving performance, code quality and adding extra features to meet common requirements. -->
 
 ### Using GitHub Issues
 
@@ -408,6 +400,8 @@ The product roadmap is being currently being tracked in [Projects](https://githu
 - Include relevant test updates/additions
 
 ## Authorship
+
+The fork is maintained by [Marcin Mikołajczak](https://github.com/mkljczk). Original credits:
 
 All credit, and many thanks, goes to [Chris Pearce](https://github.com/Chrisui) for the inception of `react-hotkeys` and all versions before `1.0.0`.
 
