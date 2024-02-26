@@ -30,7 +30,7 @@ const HotKeysContext = React.createContext<Context>({
   hotKeyMap: null,
 });
 
-interface HotKeysProps {
+export interface HotKeysProps {
   /** A map from action names to Mousetrap key sequences */
   keyMap?: HotKeyMap;
   /** A map from action names to event handler functions */
