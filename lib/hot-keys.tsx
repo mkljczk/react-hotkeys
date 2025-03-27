@@ -149,9 +149,9 @@ class HotKeys extends React.Component<HotKeysProps> {
      * delegation point for mousetrap
      */
     const el = 'attach' in this.props ? this.props.attach : this.props.attachRef?.current;
-    this.__mousetrap__ = new Mousetrap(
-      (el || ReactDOM.findDOMNode(this)) as Element,
-    );
+    if (!el) return;
+
+    this.__mousetrap__ = new Mousetrap(el as Element);
 
     this.updateHotKeys(true);
   }

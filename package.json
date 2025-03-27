@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/mkljczk/react-hotkeys/issues"
   },
-  "version": "1.2.2",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
