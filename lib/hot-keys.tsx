@@ -3,7 +3,6 @@ import isEqual from 'lodash/isEqual';
 import isObject from 'lodash/isObject';
 import Mousetrap from 'mousetrap';
 import React from 'react';
-import ReactDOM from 'react-dom';
 
 import FocusTrap from './focus-trap';
 import hasChanged from './utils/has-changed';
