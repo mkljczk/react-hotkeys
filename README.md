@@ -401,7 +401,7 @@ The product roadmap is being currently being tracked in [Projects](https://githu
 
 ## Authorship
 
-The fork is maintained by [Marcin Mikołajczak](https://github.com/mkljczk). Original credits:
+The fork is maintained by [Nicole Mikołajczyk](https://github.com/mkljczk). Original credits:
 
 All credit, and many thanks, goes to [Chris Pearce](https://github.com/Chrisui) for the inception of `react-hotkeys` and all versions before `1.0.0`.
 

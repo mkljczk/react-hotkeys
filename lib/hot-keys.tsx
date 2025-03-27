@@ -30,7 +30,7 @@ const HotKeysContext = React.createContext<Context>({
   hotKeyMap: null,
 });
 
-export interface HotKeysProps {
+export type HotKeysProps = {
   /** A map from action names to Mousetrap key sequences */
   keyMap?: HotKeyMap;
   /** A map from action names to event handler functions */
@@ -38,8 +38,6 @@ export interface HotKeysProps {
   /** Whether HotKeys should behave as if it has focus in the browser,
       whether it does or not - a way to force focus behaviour */
   focused?: boolean;
-  /** The DOM element the keyboard listeners should be attached to */
-  attach?: Element | Window;
   /** Children to wrap within a focus trap */
   children: React.ReactNode;
   /** Function to call when this component gains focus in the browser */
@@ -47,7 +45,13 @@ export interface HotKeysProps {
   /** Function to call when this component loses focus in the browser */
   onBlur?: React.FocusEventHandler<Element>;
   component?: keyof JSX.IntrinsicElements | React.ComponentType;
-}
+} & ({
+  /** The DOM element the keyboard listeners should be attached to */
+  attach: Element | Window;
+} | {
+  /** The ref container for the DOM element the keyboard listeners should be attached to */
+  attachRef: React.RefObject<Element>;
+})
 
 /**
  * Component that wraps it children in a "focus trap" and allows key events to
@@ -99,7 +103,7 @@ class HotKeys extends React.Component<HotKeysProps> {
    * Updates this component's KeyMap if either its own keyMap prop has changed
    * or its ancestor's KeyMap has been update
    *
-   * @returns {boolean} Whether the KeyMap was updated
+   * @returns Whether the KeyMap was updated
    */
   updateMap() {
     const newMap = this.buildMap();
@@ -144,8 +148,9 @@ class HotKeys extends React.Component<HotKeysProps> {
      * TODO: Not optimal - imagine hundreds of this component. We need a top level
      * delegation point for mousetrap
      */
+    const el = 'attach' in this.props ? this.props.attach : this.props.attachRef?.current;
     this.__mousetrap__ = new Mousetrap(
-      (this.props.attach || ReactDOM.findDOMNode(this)) as Element,
+      (el || ReactDOM.findDOMNode(this)) as Element,
     );
 
     this.updateHotKeys(true);
@@ -272,7 +277,7 @@ class HotKeys extends React.Component<HotKeysProps> {
    * Renders the component's children wrapped in a FocusTrap with the necessary
    * props to capture keyboard events
    *
-   * @returns {FocusTrap} FocusTrap with necessary props to capture keyboard events
+   * @returns FocusTrap with necessary props to capture keyboard events
    */
   render() {
     const {
@@ -281,7 +286,9 @@ class HotKeys extends React.Component<HotKeysProps> {
        * component
        */
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      keyMap, handlers, focused, attach,
+      keyMap, handlers, focused,
+      // @ts-ignore
+      attach, attachRef,
 
       children,
       ...props
